@@ -61,65 +61,78 @@ def extract_json_from_response(text: str) -> Dict[str, Any]:
 def build_prompt(degree: str, skills: str, interests: str) -> str:
     """Constructs the instruction prompt with explicit JSON schema for Gemma acting as the Future Me Simulator."""
     schema_template = """{
-  "summary": "Strategic overview of the student's profile, market readiness, and top potential directions.",
-  "career_matches": [
+  "executive_summary": "Strategic overview of the student's profile, market readiness, and top potential directions.",
+  "top_trajectory": "Target Job Title",
+  "fit_score": 93,
+  "career_confidence": 88,
+  "top_3_career_rankings": [
     {
-      "role": "Target Job Title",
-      "match_percentage": 92,
-      "confidence_score": 88,
-      "reasoning": "Clear explanation of why this role matches their degree, skills, and interests.",
-      "day_in_the_life": "Engaging, vivid narrative describing a typical workday in the future: morning rituals, core technical architecture & problem solving, cross-functional collaboration, and evening wrap-up.",
+      "career": "Target Job Title",
+      "score": 93,
+      "reason": "Clear explanation of why this role matches their degree, skills, and interests.",
+      "day_in_the_life": "Engaging second-person narrative describing a typical workday: morning rituals, core technical architecture & problem solving, cross-functional collaboration, and evening wrap-up.",
       "risk_radar": [
         "Risk 1: Rapid tool churn requiring continuous weekend upskilling",
-        "Risk 2: High cognitive load or on-call burnout potential",
-        "Risk 3: Knowledge mismatch between theoretical concepts and production scale"
-      ],
-      "recommended_projects": [
-        "Interactive GitHub project: Full-stack or distributed pipeline targeting real-world scale",
-        "Target Hackathon: MLH Global Hack Week or domain-specific challenge",
-        "Industry Certification: AWS Solutions Architect, CKA, or DeepLearning.AI specialization"
+        "Risk 2: High cognitive load or on-call burnout potential"
       ]
     }
+  ],
+  "strengths": [
+    "Solid foundation in software architecture and algorithms",
+    "Hands-on proficiency with core domain frameworks and modern tools"
   ],
   "skill_gaps": [
-    {
-      "existing_strength": "Current skill, technology, or domain concept the student knows well",
-      "missing_skill": "Critical high-leverage skill or tool required to bridge into the role"
-    }
+    "Production containerization and orchestration tooling (Docker, Kubernetes)",
+    "Cloud infrastructure and automated CI/CD deployment pipelines"
   ],
-  "roadmap": [
+  "market_outlook": "Global demand for this role remains exceptionally strong across technology and enterprise sectors, with high growth velocity and competitive compensation benchmarks.",
+  "future_self_simulation": {
+    "1_year": "Associate role at a growth company: actively building feature pipelines, containerizing artifacts, and integrating real-time prediction endpoints.",
+    "3_year": "Mid-level role: taking ownership of end-to-end architectures, automated retraining loops, and scaling production systems.",
+    "5_year": "Senior Lead or System Architect: driving technical strategy, designing enterprise-scale distributed workloads, and mentoring junior engineers."
+  },
+  "milestones": [
     {
-      "timeframe": "Phase 1: Months 1-2 (Foundation)",
-      "action_items": [
-        "Actionable concrete task or course",
-        "Target portfolio project or certification"
+      "title": "Master Containerization & Model Serving Infrastructure",
+      "timeline": "Months 1-3",
+      "objective": "Transition from local notebook scripts to containerized microservice architectures.",
+      "actions": [
+        "Containerize core services using Docker and docker-compose",
+        "Build asynchronous REST APIs with FastAPI and automated testing"
       ]
     }
-  ]
+  ],
+  "recommended_projects": [
+    "Interactive GitHub project: Full-stack or distributed pipeline targeting real-world scale",
+    "Target Hackathon: MLH Global Hack Week or domain-specific challenge",
+    "Industry Certification: AWS Solutions Architect, CKA, or DeepLearning.AI specialization"
+  ],
+  "learning_path": [
+    "Phase 1: Production Software Engineering & Microservices",
+    "Phase 2: Pipeline Orchestration & Monitoring",
+    "Phase 3: Cloud Compute & Infrastructure as Code",
+    "Phase 4: High-Performance Systems & Acceleration"
+  ],
+  "final_verdict": "The student profile displays exceptionally strong structural potential. Focusing immediately on production rigor will establish a high-probability trajectory toward senior technical leadership."
 }"""
 
     return f"""You are the "PathWise Future Me Simulator" — an elite AI Career Architect, Predictive Mentor, and Technology Futurist.
-Analyze this student's profile and simulate 3 compelling, realistic future career trajectories. 
-For each scenario, generate:
-1. Role title, realistic match percentage (50-98), and a career confidence score (50-99).
-2. Clear rationale connecting their background to this future.
-3. A vivid "Day in the Life" narrative taking the student through an immersive workday in their future shoes.
-4. A "Risk Radar" detailing 2-3 genuine challenges, burnout traps, or market shifts to watch out for.
-5. 2-3 concrete "Recommended Projects" (specific GitHub repositories, hackathons, or industry credentials).
-
-Also compute explicit skill gaps comparing current strengths to missing skills, and an actionable 3-phase execution roadmap.
+Analyze this student's profile and simulate their optimal future career trajectory and a complete multi-year growth simulation.
 
 Student Profile:
 - Degree / Academic Background: {degree}
 - Current Skills & Proficiencies: {skills}
 - Interests & Passion Areas: {interests}
 
-Requirements:
-1. Provide realistic tech roles aligned with current and emerging industry hiring trends.
-2. Ensure the "day_in_the_life" is written in engaging second-person or immersive present tense ("You start your morning by...", "At 2 PM you dive into...").
-3. Assign realistic confidence_score and match_percentage values (50 to 98).
-4. Identify real-world, high-leverage missing skills against existing strengths.
-5. Return ONLY a valid, raw JSON object matching the exact schema below. Do NOT output markdown fences, greetings, or conversational chatter outside the JSON:
+Instructions:
+1. Provide a top_trajectory, realistic fit_score (60-98), and career_confidence (60-98).
+2. Rank top 3 compelling career trajectories with realistic match scores, reasons, day-in-the-life narratives, and risk radars.
+3. Detail concrete strengths and priority skill gaps.
+4. Provide a macro market_outlook analyzing industry hiring demand.
+5. Create a vivid 1_year, 3_year, and 5_year future_self_simulation mapping their long-term progression.
+6. Provide structured 3-phase milestones with timeline, objective, and concrete actions.
+7. Include 3 recommended portfolio projects, a 4-phase learning path, and a decisive final_verdict.
+8. Output ONLY a valid, raw JSON object matching the exact schema below. Do NOT include markdown code fences or conversational text outside the JSON:
 
 {schema_template}
 """
@@ -136,7 +149,9 @@ def generate_mock_profile(degree: str, skills: str, interests: str) -> StudentCa
         matches = [
             FutureScenario(
                 role="Autonomous Systems & Robotics Controls Engineer",
+                career="Autonomous Systems & Robotics Controls Engineer",
                 match_percentage=94,
+                score=94,
                 confidence_score=91,
                 reasoning="Your mechanical foundations paired with SolidWorks and C++ make robotics automation and kinematics your highest leverage path.",
                 day_in_the_life="You begin your morning in the hardware robotics lab, running hardware-in-the-loop tests on a 6-axis articulated robotic arm. At 11 AM, you sync with firmware architects to debug sensor-fusion latency between LiDAR and ROS 2 navigation nodes. Post-lunch, you calibrate trajectory controllers in Gazebo before deploying a production patch to automated warehouse rovers.",
@@ -153,7 +168,9 @@ def generate_mock_profile(degree: str, skills: str, interests: str) -> StudentCa
             ),
             FutureScenario(
                 role="Mechatronics Simulation & Digital Twin Architect",
+                career="Mechatronics Simulation & Digital Twin Architect",
                 match_percentage=89,
+                score=89,
                 confidence_score=86,
                 reasoning="Strong mechanical prototyping plus MATLAB allows you to build industrial predictive digital twins for aerospace and automotive giants.",
                 day_in_the_life="You start your day reviewing telemetry streams from factory floor actuators. By noon, you are optimizing finite-element kinematics models and deploying physics-informed neural networks to predict mechanical stress fractures before physical assembly.",
@@ -169,7 +186,9 @@ def generate_mock_profile(degree: str, skills: str, interests: str) -> StudentCa
             ),
             FutureScenario(
                 role="Embedded Robotics Firmware Developer",
+                career="Embedded Robotics Firmware Developer",
                 match_percentage=83,
+                score=83,
                 confidence_score=82,
                 reasoning="Direct hardware-level control, microcontrollers, and sensor interfacing bridge your Arduino experience into enterprise IoT robotics.",
                 day_in_the_life="Your morning is spent connecting logic analyzers to custom STM32 breakout boards to trace SPI communication drops. In the afternoon, you write zero-copy ring buffers in modern C++ for low-power motor drivers.",
@@ -198,39 +217,80 @@ def generate_mock_profile(degree: str, skills: str, interests: str) -> StudentCa
                 missing_skill="Gazebo Physics Simulation & MoveIt Motion Planning"
             ),
         ]
-        roadmap = [
+        milestones = [
             RoadmapPhase(
-                timeframe="Phase 1: Months 1-2 (Embedded Firmware & ROS 2 Mastery)",
-                action_items=[
+                title="Master Embedded Firmware & ROS 2 Foundations",
+                timeline="Months 1-2",
+                objective="Transition from standalone microcontrollers to distributed ROS 2 robotics middleware and RTOS.",
+                actions=[
                     "Complete Modern C++ (C++17/20) for Embedded Systems and Linux system programming.",
                     "Set up ROS 2 Humble environment and implement publisher/subscriber sensor nodes.",
                     "Interface an IMU and motor encoder with an STM32 board over I2C/SPI."
                 ]
             ),
             RoadmapPhase(
-                timeframe="Phase 2: Months 3-4 (Autonomous Navigation & Simulation)",
-                action_items=[
+                title="Autonomous Navigation & Physics Simulation",
+                timeline="Months 3-4",
+                objective="Simulate multi-sensor SLAM navigation and obstacle avoidance in virtual environments.",
+                actions=[
                     "Construct a 2D differential drive robot model in URDF and simulate in Gazebo.",
                     "Integrate Nav2 stack for SLAM map generation and autonomous obstacle avoidance.",
                     "Publish a documented GitHub showcase with simulation demo GIFs."
                 ]
             ),
             RoadmapPhase(
-                timeframe="Phase 3: Months 5-6 (Hardware Deployment & Production Portfolio)",
-                action_items=[
+                title="Hardware Deployment & Production Portfolio",
+                timeline="Months 5-6",
+                objective="Deploy and benchmark validated algorithms onto physical edge compute hardware.",
+                actions=[
                     "Flash code onto a physical Raspberry Pi + Arduino rover platform for real-world validation.",
                     "Submit robotics portfolio project to MLH Hackathon or ROSCon student track.",
                     "Conduct mock technical interviews on robotics kinematics, sensor fusion, and RTOS concurrency."
                 ]
             ),
         ]
+        strengths = [
+            "Strong core mechanical engineering principles, kinematics, and structural prototyping.",
+            "Hands-on CAD modeling proficiency in SolidWorks and physical assembly testing.",
+            "Fundamental microcontroller programming and sensor actuation familiarity."
+        ]
+        future_self = {
+            "1_year": "Junior Robotics Controls Engineer: testing motor actuation benchmarks, calibrating sensor nodes, and writing ROS 2 device wrappers.",
+            "3_year": "Autonomous Systems Engineer: architecting SLAM navigation pipelines, reducing controller latency, and conducting field trials.",
+            "5_year": "Lead Robotics Architect: overseeing full-stack autonomy platforms, hardware-software integration, and automated fleet deployments."
+        }
+        market_outlook = (
+            "The robotics and autonomous systems sector is undergoing exponential growth driven by warehouse logistics automation, "
+            "smart manufacturing, and autonomous mobile robots (AMRs). Hardware-aware software engineers command strong hiring premiums."
+        )
+        learning_path = [
+            "Phase 1: Modern Embedded C++ (C++17/20), Linux CLI, and Real-Time POSIX threads.",
+            "Phase 2: ROS 2 Architecture, DDS Communications, and URDF Robot Modeling.",
+            "Phase 3: Sensor Fusion (Extended Kalman Filters, LiDAR/Camera calibration) & Nav2.",
+            "Phase 4: Real-Time Operating Systems (FreeRTOS) and Hardware-in-the-Loop Validation."
+        ]
+        recommended_projects = [
+            "Autonomous SLAM Rover: Build a Gazebo-simulated differential drive rover with Nav2 and costmap generation.",
+            "STM32 RTOS Motor Controller: Firmware with CAN bus telemetry and closed-loop PID control.",
+            "Robotics Vision Pipeline: YOLOv8 object detection integrated with ROS 2 camera nodes."
+        ]
+        verdict = (
+            "Your mechanical prototyping and hardware intuition provide a rare and valuable foundation. "
+            "Mastering ROS 2 and modern C++ firmware will immediately position you for elite autonomous systems roles."
+        )
+        top_traj = "Autonomous Systems & Robotics Controls Engineer"
+        fit_sc = 94
+        conf_sc = 91
+
     else:
         matches = [
             FutureScenario(
-                role="AI Systems & LLM Application Engineer",
-                match_percentage=95,
-                confidence_score=93,
-                reasoning="Your CS foundations in Python, data structures, and PyTorch align directly with the high demand for generative AI agents and RAG pipelines.",
+                role="Machine Learning Engineer",
+                career="Machine Learning Engineer",
+                match_percentage=93,
+                score=93,
+                confidence_score=88,
+                reasoning="High structural alignment between computer science fundamentals, hands-on PyTorch/Python proficiency, and enterprise demand for scalable model deployment.",
                 day_in_the_life="You begin your morning reviewing latency metrics for an agentic multi-hop inference pipeline serving thousands of requests. At 10:30 AM, you collaborate with product leads to test semantic vector retrieval accuracy in Qdrant. After lunch, you fine-tune a specialized 9B parameter model with LoRA on synthetic domain datasets, optimizing token latency by 35%.",
                 risk_radar=[
                     "Hyper-Velocity Tool Churn: Frameworks and model releases update weekly, requiring continual re-architecture.",
@@ -238,97 +298,157 @@ def generate_mock_profile(degree: str, skills: str, interests: str) -> StudentCa
                     "GPU Resource Constraints: Balancing cost efficiency and inference throughput under high traffic."
                 ],
                 recommended_projects=[
-                    "Build an autonomous multi-agent research analyst using LangGraph and hybrid vector search",
-                    "Compete in MLH Global Hack Week Generative AI Track or AI Agents Hackathon",
-                    "Earn DeepLearning.AI Generative AI with LLMs Certificate or AWS Machine Learning Specialty"
+                    "Production Real-Time Recommendation Service: Build, containerize, and deploy a deep learning model using PyTorch, FastAPI, Docker, and Redis.",
+                    "Automated MLOps Drift & Retraining Pipeline: Develop an end-to-end pipeline utilizing MLflow and Airflow.",
+                    "Distributed LLM Fine-Tuning Endpoint: Fine-tune an open-weight LLM using QLoRA/Ray and convert to TensorRT/ONNX."
                 ]
             ),
             FutureScenario(
-                role="Production MLOps & Platform Engineer",
-                match_percentage=88,
+                role="AI Systems & LLM Application Engineer",
+                career="AI Systems & LLM Application Engineer",
+                match_percentage=89,
+                score=89,
                 confidence_score=87,
-                reasoning="Data structures, SQL, and Python provide the ideal base for production machine learning infrastructure and pipeline automation.",
-                day_in_the_life="You check automated continuous training workflows triggered by data drift alerts. By mid-day, you are writing Kubernetes helm charts to scale model serving pods with Triton and monitoring feature store latency in Feast.",
+                reasoning="Your CS foundations in Python, data structures, and PyTorch align directly with the high demand for generative AI agents and RAG pipelines.",
+                day_in_the_life="You build autonomous multi-agent workflows with tool-calling capabilities, optimize prompt caching, and integrate vector embeddings for ultra-fast enterprise search.",
                 risk_radar=[
                     "Silent Data Drift: Subtly degrading model performance without explicit crash errors.",
                     "On-Call Fatigue: 24/7 reliability requirements for production prediction microservices."
                 ],
                 recommended_projects=[
-                    "Deploy an end-to-end ML training and serving pipeline using MLflow, Docker, and FastEmbed",
-                    "Build an open-source GitHub CI/CD action for automatic model card evaluation",
-                    "Earn Certified Kubernetes Administrator (CKA)"
+                    "Build an autonomous multi-agent research analyst using LangGraph and hybrid vector search",
+                    "Compete in MLH Global Hack Week Generative AI Track or AI Agents Hackathon",
+                    "Earn DeepLearning.AI Generative AI with LLMs Certificate"
                 ]
             ),
             FutureScenario(
-                role="Computer Vision & Edge Intelligence Engineer",
+                role="Data Scientist & Analytical Modeler",
+                career="Data Scientist & Analytical Modeler",
                 match_percentage=84,
-                confidence_score=81,
-                reasoning="Your PyTorch, NumPy, and algorithm proficiencies transfer seamlessly into real-time spatial computing and edge perception models.",
-                day_in_the_life="Your morning is focused on quantizing a vision transformer down to INT8 for deployment on edge Jetson devices. In the afternoon, you run benchmark video feeds to optimize multi-camera tracking and object bounding boxes.",
+                score=84,
+                confidence_score=82,
+                reasoning="Solid mathematical and SQL background, though slightly less optimal for a profile focused on production systems engineering.",
+                day_in_the_life="You design A/B experiment frameworks, extract causal inferences from high-volume telemetry tables, and translate predictive scores into executive business decisions.",
                 risk_radar=[
-                    "Edge Thermal Throttling: Embedded GPU heat and power budgets limiting inference frames-per-second.",
-                    "Annotation Bottlenecks: Handling noisy, uncurated training video datasets."
+                    "Stakeholder Communication Mismatches: Translating statistical p-values into actionable product strategy.",
+                    "Unstructured Data Cleaning: Spending outsized time wrangling dirty data before model experimentation."
                 ],
                 recommended_projects=[
-                    "Develop an edge-ready real-time defect detection pipeline with TensorRT and OpenCV",
-                    "Participate in Kaggle CV competition or OpenCV AI Challenge",
-                    "Complete Stanford CS231n Computer Vision coursework"
+                    "End-to-End Customer Lifetime Value Survival Analysis on Kaggle e-commerce data",
+                    "Automated Streamlit Analytical Dashboard with interactive Bayesian cohort models",
+                    "Complete Stanford CS229 Machine Learning coursework"
                 ]
             ),
         ]
         gaps = [
             SkillGap(
-                existing_strength="NumPy, Pandas & Scikit-Learn Modeling",
-                missing_skill="Vector Databases (Qdrant/Pinecone) & Hybrid Search"
+                existing_strength="Computer Science Principles & Algorithms",
+                missing_skill="Production MLOps tooling (Docker, Kubernetes, MLflow, Kubeflow)"
             ),
             SkillGap(
-                existing_strength="Basic PyTorch & Neural Networks",
-                missing_skill="Quantization (GGUF/AWQ) & Fine-Tuning (PEFT/LoRA)"
+                existing_strength="Core PyTorch & Modeling Scripts",
+                missing_skill="Distributed computing frameworks for scale (Apache Spark, Ray)"
             ),
             SkillGap(
-                existing_strength="Git & Python Scripting",
-                missing_skill="Docker Containerization & CI/CD Pipeline Automation"
+                existing_strength="Relational Databases & SQL Queries",
+                missing_skill="Cloud infrastructure & Infrastructure as Code (AWS/GCP, Terraform)"
+            ),
+            SkillGap(
+                existing_strength="Python Scripting & Prototyping",
+                missing_skill="Model acceleration & inference optimization (ONNX, TensorRT, Quantization)"
             ),
         ]
-        roadmap = [
+        milestones = [
             RoadmapPhase(
-                timeframe="Phase 1: Months 1-2 (Production AI Systems & Vector Pipelines)",
-                action_items=[
-                    "Master modern async Python, FastAPI, and structured Pydantic schemas for LLM APIs.",
-                    "Build an end-to-end RAG system with hybrid semantic search and reranking.",
-                    "Deploy the application as a containerized microservice on Render or AWS ECS."
+                title="Master Containerization & Model Serving Infrastructure",
+                timeline="Months 1-3",
+                objective="Transition from experimental local notebook environments to containerized microservice architectures.",
+                actions=[
+                    "Containerize model training and inference scripts using Docker.",
+                    "Build and deploy production REST APIs using FastAPI for asynchronous predictions.",
+                    "Implement basic automated testing and linting pipelines with GitHub Actions."
                 ]
             ),
             RoadmapPhase(
-                timeframe="Phase 2: Months 3-4 (Autonomous Agents & Efficient Fine-Tuning)",
-                action_items=[
-                    "Implement stateful multi-agent workflows with tool-calling and cycle detection.",
-                    "Fine-tune a quantized open-source model using QLoRA on a domain-specific dataset.",
-                    "Benchmark evaluation metrics using Ragas and LLM-as-a-judge methodologies."
+                title="Implement End-to-End MLOps & Pipeline Orchestration",
+                timeline="Months 4-6",
+                objective="Construct automated ML pipelines encompassing tracking, orchestration, and monitoring.",
+                actions=[
+                    "Integrate MLflow or Weights & Biases for experiment tracking and metric logging.",
+                    "Orchestrate data preprocessing and model retraining pipelines using Apache Airflow or Prefect.",
+                    "Implement data and model drift monitoring dashboards to track prediction performance in production."
                 ]
             ),
             RoadmapPhase(
-                timeframe="Phase 3: Months 5-6 (Enterprise MLOps & Capstone Portfolio)",
-                action_items=[
-                    "Deploy continuous model monitoring with telemetry tracking token usage, latency, and drift.",
-                    "Win or place in a premier community hackathon (e.g. MLH Global Hack Week).",
-                    "Publish a comprehensive technical writeup and architecture breakdown on dev.to and GitHub."
+                title="Scale Distributed Computing & Cloud Optimization",
+                timeline="Months 7-12",
+                objective="Optimize inference latencies and deploy scalable workloads onto major cloud platforms.",
+                actions=[
+                    "Provision scalable compute clusters on AWS or GCP using Infrastructure as Code (Terraform).",
+                    "Apply model optimization techniques including ONNX runtime conversion and quantization.",
+                    "Develop an open-source end-to-end production pipeline portfolio project serving live traffic."
                 ]
             ),
         ]
+        strengths = [
+            "Solid foundation in computer science principles, algorithms, and object-oriented architecture.",
+            "Hands-on proficiency with core ML frameworks including PyTorch and scientific computing libraries.",
+            "Strong relational database fluency and SQL query optimization skills.",
+            "Clear strategic alignment between candidate interests and rapid growth sectors in automated AI production."
+        ]
+        future_self = {
+            "1_year": "Associate Machine Learning Engineer at a growth-stage tech company, actively maintaining feature pipelines, containerizing model artifacts, and integrating real-time prediction endpoints.",
+            "3_year": "Mid-Level Machine Learning Engineer taking ownership of end-to-end model deployments, managing automated retraining loops, drift detection systems, and vector database architectures.",
+            "5_year": "Senior Machine Learning Engineer or AI System Architect driving technical strategy, designing enterprise-scale distributed training jobs, and mentoring junior engineering teams."
+        }
+        market_outlook = (
+            "Global demand for Machine Learning Engineers remains exceptionally strong across technology, finance, and enterprise sectors. "
+            "Organizations actively prioritize candidates who combine model development with robust software engineering and production MLOps practices. "
+            "Growth velocity and compensation benchmarks in this domain significantly exceed standard software roles."
+        )
+        learning_path = [
+            "Phase 1: Production Software Engineering & Microservices (FastAPI, Docker, Async Python, Testing Frameworks).",
+            "Phase 2: MLOps & Pipeline Orchestration (MLflow, Apache Airflow, Weights & Biases).",
+            "Phase 3: Cloud Compute & Infrastructure (AWS/GCP, Kubernetes, Terraform, Apache Spark).",
+            "Phase 4: High-Performance ML Inference (ONNX, TensorRT, Model Quantization, Vector Databases)."
+        ]
+        recommended_projects = [
+            "Production Real-Time Recommendation Service: Build, containerize, and deploy a deep learning recommendation model using PyTorch, FastAPI, Docker, and Redis caching.",
+            "Automated MLOps Drift & Retraining Pipeline: Develop an end-to-end pipeline utilizing MLflow and Airflow that monitors incoming data for drift and automatically triggers model retraining.",
+            "Distributed LLM Fine-Tuning & Quantized API Endpoint: Fine-tune an open-weight LLM using QLoRA/Ray, convert to TensorRT/ONNX, and serve via scalable serverless compute."
+        ]
+        verdict = (
+            "The student profile displays exceptionally strong structural potential for high-impact roles in Machine Learning Engineering. "
+            "With foundational algorithmic and modeling skill sets established, focusing immediately on software engineering rigor, "
+            "containerization, and automated MLOps pipelines will maximize market competitiveness and establish a high-probability trajectory toward senior technical leadership."
+        )
+        top_traj = "Machine Learning Engineer"
+        fit_sc = 93
+        conf_sc = 88
 
     summary = (
-        f"Strategic analysis of your background in {degree} shows strong core foundations in {skills}. "
-        f"Your target interest in {interests} aligns with top-quartile market demand. "
-        "With focused acquisition of production deployment, orchestration, and domain-specific scaling patterns, "
-        "you are positioned to enter senior trajectory roles within 12-18 months."
+        f"Based on an analysis of your background in {degree} combined with core competencies in {skills}, "
+        f"the optimal career trajectory is {top_traj}. The candidate possesses strong foundations, "
+        f"and closing key operational gaps in MLOps, CI/CD, and cloud infrastructure will accelerate advancement into senior engineering roles."
     )
 
     return StudentCareerProfile(
         summary=summary,
+        executive_summary=summary,
+        top_trajectory=top_traj,
+        fit_score=fit_sc,
+        career_confidence=conf_sc,
+        top_3_career_rankings=matches,
         career_matches=matches,
+        strengths=strengths,
         skill_gaps=gaps,
-        roadmap=roadmap,
+        market_outlook=market_outlook,
+        future_self_simulation=future_self,
+        milestones=milestones,
+        roadmap=milestones,
+        recommended_projects=recommended_projects,
+        learning_path=learning_path,
+        final_verdict=verdict,
     )
 
 
@@ -355,7 +475,7 @@ def analyze_student_profile(
     system_instruction = (
         "You are the PathWise Future Me Simulator, an expert career advisory and predictive trajectory AI. "
         "You MUST respond ONLY with a raw, valid JSON object matching the requested schema. "
-        "Do NOT include conversational markdown, greetings, or extra explanations."
+        "Do NOT include conversational markdown, greetings, or extra explanations outside the JSON."
     )
     user_prompt = build_prompt(degree=degree, skills=skills, interests=interests)
 
@@ -376,7 +496,7 @@ def analyze_student_profile(
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": user_prompt},
             ],
-            "max_tokens": 2500,
+            "max_tokens": 3000,
             "temperature": 0.2,
         }
 
@@ -426,14 +546,13 @@ def analyze_student_profile(
                     {"role": "system", "content": system_instruction},
                     {"role": "user", "content": user_prompt},
                 ],
-                max_tokens=2500,
+                max_tokens=3000,
                 temperature=0.2,
             )
             raw_response_text = chat_resp.choices[0].message.content
         except Exception as client_err:
             # If network/token failure occurs, fall back to high-fidelity mock profile
             if last_error:
-                # Log or return mock with informative summary
                 mock = generate_mock_profile(degree=degree, skills=skills, interests=interests)
                 mock.summary = f"[Offline Fallback Simulation] {mock.summary}"
                 return mock
