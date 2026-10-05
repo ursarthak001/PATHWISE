@@ -24,14 +24,40 @@ FALLBACK_MODELS = ["google/gemma-3-12b-it", "google/gemma-2-9b-it", "google/gemm
 
 def resolve_hf_token(token: Optional[str] = None) -> Optional[str]:
     """
-    Resolves the Hugging Face token from explicit argument or environment variable,
-    treating empty strings and placeholder tokens as missing.
+    Resolves the Hugging Face token from explicit argument, environment variables,
+    or Streamlit secrets, supporting alternative key names, casing, and whitespace.
     """
-    raw = (token or os.getenv("HF_TOKEN") or "").strip()
-    raw = raw.strip('"').strip("'")
-    if not raw or raw in ("your_huggingface_token_here", "hf_...", "your_token_here"):
-        return None
-    return raw
+    candidates = [
+        token,
+        os.getenv("HF_TOKEN"),
+        os.getenv("HUGGINGFACE_TOKEN"),
+        os.getenv("HUGGING_FACE_HUB_TOKEN"),
+        os.getenv("HF_API_KEY"),
+        os.getenv("hf_token"),
+    ]
+
+    # Case-insensitive and trimmed scan across all environment variables
+    for k, v in os.environ.items():
+        if k.strip().upper() in ("HF_TOKEN", "HUGGINGFACE_TOKEN", "HUGGING_FACE_HUB_TOKEN", "HF_API_KEY"):
+            candidates.append(v)
+
+    # Check Streamlit secrets if present
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets"):
+            for sec_key in ("HF_TOKEN", "HUGGINGFACE_TOKEN", "HF_API_KEY", "hf_token"):
+                if sec_key in st.secrets:
+                    candidates.append(st.secrets[sec_key])
+    except Exception:
+        pass
+
+    for cand in candidates:
+        if cand:
+            cleaned = str(cand).strip().strip('"').strip("'")
+            if cleaned and cleaned not in ("your_huggingface_token_here", "hf_...", "your_token_here"):
+                return cleaned
+
+    return None
 
 
 def extract_json_from_response(text: str) -> Dict[str, Any]:
