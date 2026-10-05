@@ -46,6 +46,7 @@ def generate_markdown_report(
     profile: StudentCareerProfile, degree: str, skills: str, interests: str
 ) -> str:
     """Generates an executive-ready Markdown export of the entire career plan and simulations."""
+    summary_text = getattr(profile, "executive_summary", None) or getattr(profile, "summary", "")
     lines = [
         "# Pathwise 🔮 Future Me Simulator — Strategic Career Roadmap",
         "",
@@ -57,31 +58,34 @@ def generate_markdown_report(
         "---",
         "",
         "## 📋 Executive Strategic Assessment",
-        f"{profile.executive_summary or profile.summary}",
+        f"{summary_text}",
         "",
     ]
 
-    if profile.strengths:
+    strengths = getattr(profile, "strengths", [])
+    if strengths:
         lines.extend([
             "### 🌟 Core Candidate Strengths",
-            *[f"- ✅ {s}" for s in profile.strengths],
+            *[f"- ✅ {s}" for s in strengths],
             "",
         ])
 
-    if profile.market_outlook:
+    market_outlook = getattr(profile, "market_outlook", "")
+    if market_outlook:
         lines.extend([
             "### 📈 Macro Market Outlook",
-            f"{profile.market_outlook}",
+            f"{market_outlook}",
             "",
         ])
 
-    if profile.future_self_simulation:
+    future_sim = getattr(profile, "future_self_simulation", {})
+    if future_sim:
         lines.extend([
             "---",
             "",
             "## ⏳ Future Self Simulation Timeline",
         ])
-        for yr, narrative in profile.future_self_simulation.items():
+        for yr, narrative in future_sim.items():
             formatted_yr = yr.replace("_", " ").title()
             lines.append(f"### 🚀 {formatted_yr} Horizon\n{narrative}\n")
 
@@ -91,7 +95,8 @@ def generate_markdown_report(
         "## 🔮 Future Me Simulated Trajectories",
     ])
 
-    for idx, scenario in enumerate(profile.career_matches, start=1):
+    career_matches = getattr(profile, "career_matches", []) or []
+    for idx, scenario in enumerate(career_matches, start=1):
         lines.append(
             f"### {idx}. {scenario.role} — {scenario.confidence_score}% Confidence | {scenario.match_percentage}% Capability Overlap"
         )
@@ -108,7 +113,7 @@ def generate_markdown_report(
         lines.append("")
 
         lines.append("#### 🚀 Recommended Projects & Certifications")
-        projects = scenario.recommended_projects or profile.recommended_projects
+        projects = scenario.recommended_projects or getattr(profile, "recommended_projects", [])
         if projects:
             for proj in projects:
                 lines.append(f"- [ ] {proj}")
@@ -123,7 +128,8 @@ def generate_markdown_report(
         "| Current Foundation | Target Missing Skill |",
         "| :--- | :--- |",
     ])
-    for gap in profile.skill_gaps:
+    skill_gaps = getattr(profile, "skill_gaps", []) or []
+    for gap in skill_gaps:
         lines.append(f"| {gap.existing_strength} | {gap.missing_skill} |")
 
     lines.extend([
@@ -132,30 +138,36 @@ def generate_markdown_report(
         "",
         "## 🗺️ Milestone Execution Roadmap",
     ])
-    for phase in profile.milestones or profile.roadmap:
-        title_str = phase.title or phase.timeframe
-        lines.append(f"\n### 📍 {title_str} ({phase.timeline})")
-        if phase.objective:
-            lines.append(f"**Objective:** {phase.objective}\n")
-        for item in (phase.actions or phase.action_items):
+    milestones_list = getattr(profile, "milestones", None) or getattr(profile, "roadmap", None) or []
+    for phase in milestones_list:
+        title_str = getattr(phase, "title", None) or getattr(phase, "timeframe", "Milestone Phase")
+        timeline_str = getattr(phase, "timeline", getattr(phase, "timeframe", "Upcoming Sprint"))
+        objective_str = getattr(phase, "objective", "")
+        lines.append(f"\n### 📍 {title_str} ({timeline_str})")
+        if objective_str:
+            lines.append(f"**Objective:** {objective_str}\n")
+        actions_list = getattr(phase, "actions", None) or getattr(phase, "action_items", None) or []
+        for item in actions_list:
             lines.append(f"- [ ] {item}")
 
-    if profile.learning_path:
+    learning_path = getattr(profile, "learning_path", [])
+    if learning_path:
         lines.extend([
             "",
             "---",
             "",
             "## 📚 Phased Learning Path",
-            *[f"- 🎯 {step}" for step in profile.learning_path],
+            *[f"- 🎯 {step}" for step in learning_path],
         ])
 
-    if profile.final_verdict:
+    final_verdict = getattr(profile, "final_verdict", "")
+    if final_verdict:
         lines.extend([
             "",
             "---",
             "",
             "## 🏆 Final Strategic Verdict",
-            f"{profile.final_verdict}",
+            f"{final_verdict}",
         ])
 
     lines.append(
@@ -236,9 +248,22 @@ with st.sidebar:
 st.title("Pathwise 🔮 Future Me Simulator")
 st.caption("AI-Powered Predictive Career Simulator, Skill Gap Diagnostics & Milestone Execution Engine")
 
-# Session state initialization
+# Session state initialization & resilient schema migration
 if "career_profile" not in st.session_state:
     st.session_state.career_profile = None
+elif st.session_state.career_profile is not None:
+    # Ensure any older profile instance in session state is upgraded safely
+    try:
+        current_obj = st.session_state.career_profile
+        if not hasattr(current_obj, "top_trajectory"):
+            dumped = (
+                current_obj.model_dump()
+                if hasattr(current_obj, "model_dump")
+                else current_obj.dict()
+            )
+            st.session_state.career_profile = StudentCareerProfile.model_validate(dumped)
+    except Exception:
+        st.session_state.career_profile = None
 
 # Handle Form Submission
 if submit_btn:
@@ -266,38 +291,47 @@ if submit_btn:
 # ---------------------------------------------------------
 # Bento Grid Dashboard Layout
 # ---------------------------------------------------------
-profile: StudentCareerProfile = st.session_state.career_profile
+profile = st.session_state.career_profile
 
 # 1. Four-Column KPI Metric Row
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
 with kpi1:
-    top_role = (
-        profile.top_trajectory
-        if profile and profile.top_trajectory
-        else (profile.career_matches[0].role if profile and profile.career_matches else "Pending Input")
-    )
+    top_role = "Pending Input"
+    if profile:
+        top_role = getattr(profile, "top_trajectory", None)
+        if not top_role:
+            matches = getattr(profile, "career_matches", None)
+            top_role = matches[0].role if matches else "Pending Input"
     st.metric(label="🎯 Top Trajectory", value=top_role)
 
 with kpi2:
-    fit_score = (
-        f"{profile.fit_score}%"
-        if profile and profile.fit_score is not None
-        else (f"{profile.career_matches[0].match_percentage}%" if profile and profile.career_matches else "—")
-    )
+    fit_score = "—"
+    if profile:
+        sc = getattr(profile, "fit_score", None)
+        if sc is not None:
+            fit_score = f"{sc}%"
+        else:
+            matches = getattr(profile, "career_matches", None)
+            fit_score = f"{matches[0].match_percentage}%" if matches else "—"
     st.metric(label="📊 Capability Fit", value=fit_score)
 
 with kpi3:
-    conf_score = (
-        f"{profile.career_confidence}%"
-        if profile and profile.career_confidence is not None
-        else (f"{profile.career_matches[0].confidence_score}%" if profile and profile.career_matches else "—")
-    )
+    conf_score = "—"
+    if profile:
+        cs = getattr(profile, "career_confidence", None)
+        if cs is not None:
+            conf_score = f"{cs}%"
+        else:
+            matches = getattr(profile, "career_matches", None)
+            conf_score = f"{matches[0].confidence_score}%" if matches else "—"
     st.metric(label="🔮 Career Confidence", value=conf_score)
 
 with kpi4:
-    sprints_count = len(profile.milestones or profile.roadmap) if profile else 0
-    sprints_val = f"{sprints_count} Milestones" if profile and sprints_count > 0 else "—"
+    sprints_val = "—"
+    if profile:
+        m_list = getattr(profile, "milestones", None) or getattr(profile, "roadmap", None) or []
+        sprints_val = f"{len(m_list)} Milestones" if m_list else "—"
     st.metric(label="🗺️ Sprints", value=sprints_val)
 
 st.divider()
@@ -306,29 +340,33 @@ if profile:
     # 2. Executive Assessment & Market Outlook Bento Box
     with st.container(border=True):
         st.subheader("📋 Executive Strategic Assessment")
-        st.info(profile.executive_summary or profile.summary)
+        assessment_text = getattr(profile, "executive_summary", None) or getattr(profile, "summary", "")
+        st.info(assessment_text)
 
         # Strengths & Market Outlook 2-column grid
-        if profile.strengths or profile.market_outlook:
+        strengths = getattr(profile, "strengths", [])
+        market_outlook = getattr(profile, "market_outlook", "")
+        if strengths or market_outlook:
             col_str, col_mkt = st.columns([1, 1], gap="medium")
 
             with col_str:
                 st.markdown("##### 🌟 Core Candidate Strengths")
-                if profile.strengths:
-                    for s in profile.strengths:
+                if strengths:
+                    for s in strengths:
                         st.write(f"✅ {s}")
                 else:
                     st.write("Demonstrated high capability fit across core technical competencies.")
 
             with col_mkt:
                 st.markdown("##### 📈 Macro Market Outlook")
-                if profile.market_outlook:
-                    st.markdown(f"*{profile.market_outlook}*")
+                if market_outlook:
+                    st.markdown(f"*{market_outlook}*")
                 else:
                     st.write("Strong enterprise hiring demand across next-generation software and AI roles.")
 
     # 3. ⏳ Future Self Simulation Timeline (1-Year, 3-Year, 5-Year Horizon)
-    if profile.future_self_simulation:
+    future_sim = getattr(profile, "future_self_simulation", {})
+    if future_sim:
         st.subheader("⏳ Future Self Simulation Timeline")
         st.caption("A multi-year projection simulating your progression from associate impact to senior technical leadership.")
 
@@ -338,21 +376,21 @@ if profile:
             with st.container(border=True):
                 st.markdown("#### 🚀 Year 1 Horizon")
                 st.caption("Associate Execution & Foundation")
-                y1_text = profile.future_self_simulation.get("1_year") or profile.future_self_simulation.get("1-year") or "Active contribution on core pipelines and microservices."
+                y1_text = future_sim.get("1_year") or future_sim.get("1-year") or "Active contribution on core pipelines and microservices."
                 st.write(y1_text)
 
         with col_y3:
             with st.container(border=True):
                 st.markdown("#### 🎯 Year 3 Horizon")
                 st.caption("Mid-Level Ownership & Scale")
-                y3_text = profile.future_self_simulation.get("3_year") or profile.future_self_simulation.get("3-year") or "Leading end-to-end production architectures and automated retraining."
+                y3_text = future_sim.get("3_year") or future_sim.get("3-year") or "Leading end-to-end production architectures and automated retraining."
                 st.write(y3_text)
 
         with col_y5:
             with st.container(border=True):
                 st.markdown("#### 👑 Year 5 Horizon")
                 st.caption("Senior Lead & Technical Strategy")
-                y5_text = profile.future_self_simulation.get("5_year") or profile.future_self_simulation.get("5-year") or "Driving strategic enterprise architecture and technical mentoring."
+                y5_text = future_sim.get("5_year") or future_sim.get("5-year") or "Driving strategic enterprise architecture and technical mentoring."
                 st.write(y5_text)
 
         st.divider()
@@ -361,14 +399,15 @@ if profile:
     st.subheader("🔮 Future Me Simulated Trajectories")
     st.caption("Simulate your potential career futures: explore day-in-the-life routines, evaluate dream vs. reality skill bridges, navigate risks, and execute targeted projects.")
 
-    if not profile.career_matches:
+    career_matches = getattr(profile, "career_matches", [])
+    if not career_matches:
         with st.container(border=True):
             st.write("No career trajectories simulated yet.")
     else:
         # Dynamic tabs generated from recommended role names
-        tabs = st.tabs([scenario.role for scenario in profile.career_matches])
+        tabs = st.tabs([scenario.role for scenario in career_matches])
 
-        for tab_idx, (tab, scenario) in enumerate(zip(tabs, profile.career_matches)):
+        for tab_idx, (tab, scenario) in enumerate(zip(tabs, career_matches)):
             with tab:
                 # Header: Display the Role and a large st.metric for "Career Confidence Score"
                 head_left, head_right = st.columns([3, 1.2])
@@ -404,17 +443,17 @@ if profile:
                     with st.container(border=True):
                         st.subheader("⚖️ Dream vs Reality")
                         st.caption("Mapping your current skill foundation against missing skills required for this role.")
-                        if profile.skill_gaps:
-                            for gap_idx, gap in enumerate(profile.skill_gaps):
+                        gaps = getattr(profile, "skill_gaps", [])
+                        if gaps:
+                            for gap_idx, gap in enumerate(gaps):
                                 g1, g2 = st.columns(2)
                                 with g1:
                                     st.caption("CURRENT STRENGTH")
                                     st.write(f"✅ **{gap.existing_strength}**")
-                                Carriage = gap.missing_skill
                                 with g2:
                                     st.caption("ROLE GAP TO BRIDGE")
-                                    st.write(f"🎯 **{Carriage}**")
-                                if gap_idx < len(profile.skill_gaps) - 1:
+                                    st.write(f"🎯 **{gap.missing_skill}**")
+                                if gap_idx < len(gaps) - 1:
                                     st.divider()
                         else:
                             st.write("No critical skill disparities detected.")
@@ -433,7 +472,7 @@ if profile:
                 with st.container(border=True):
                     st.subheader("🚀 Execution & Projects")
                     st.caption("Hands-on hackathons, production repositories, and industry certifications to make this future a reality.")
-                    candidate_projects = scenario.recommended_projects or profile.recommended_projects
+                    candidate_projects = scenario.recommended_projects or getattr(profile, "recommended_projects", [])
                     if candidate_projects:
                         st.write("Track recommended milestones for this scenario:")
                         for proj_idx, proj in enumerate(candidate_projects):
@@ -446,7 +485,7 @@ if profile:
 
     # 5. Phased Milestone Roadmap & Learning Curriculum
     st.divider()
-    roadmap_list = profile.milestones or profile.roadmap
+    roadmap_list = getattr(profile, "milestones", None) or getattr(profile, "roadmap", None) or []
 
     col_sprints, col_learning = st.columns([1.2, 1], gap="medium")
 
@@ -459,15 +498,18 @@ if profile:
                 st.write("No milestone roadmap generated.")
             else:
                 for phase_idx, phase in enumerate(roadmap_list):
-                    display_title = phase.title if phase.title != phase.timeline else phase.timeframe
+                    timeline_str = getattr(phase, "timeline", getattr(phase, "timeframe", "Upcoming Sprint"))
+                    title_str = getattr(phase, "title", timeline_str)
+                    display_title = title_str if title_str != timeline_str else timeline_str
                     with st.expander(
-                        f"📍 {phase.timeline}: {display_title}",
+                        f"📍 {timeline_str}: {display_title}",
                         expanded=(phase_idx == 0),
                     ):
-                        if phase.objective:
-                            st.info(f"**Objective:** {phase.objective}")
+                        objective_str = getattr(phase, "objective", "")
+                        if objective_str:
+                            st.info(f"**Objective:** {objective_str}")
 
-                        items = phase.actions or phase.action_items
+                        items = getattr(phase, "actions", None) or getattr(phase, "action_items", None) or []
                         if items:
                             st.write("Actionable sprint milestones:")
                             for item_idx, action_item in enumerate(items):
@@ -483,20 +525,22 @@ if profile:
         st.caption("Targeted curriculum sequence bridging into production roles.")
 
         with st.container(border=True):
-            if profile.learning_path:
-                for l_idx, step in enumerate(profile.learning_path, start=1):
+            learning_path = getattr(profile, "learning_path", [])
+            if learning_path:
+                for l_idx, step in enumerate(learning_path, start=1):
                     st.markdown(f"**Step {l_idx}:** {step}")
-                    if l_idx < len(profile.learning_path):
+                    if l_idx < len(learning_path):
                         st.divider()
             else:
                 st.write("Custom learning path will generate automatically with your profile.")
 
     # 6. Final Strategic Verdict
-    if profile.final_verdict:
+    final_verdict = getattr(profile, "final_verdict", "")
+    if final_verdict:
         st.divider()
         with st.container(border=True):
             st.subheader("🏆 Final Strategic Verdict")
-            st.success(profile.final_verdict, icon="🎯")
+            st.success(final_verdict, icon="🎯")
 
     # 7. Full Report Downloads
     st.divider()
@@ -519,7 +563,11 @@ if profile:
         )
 
     with dl_col2:
-        json_content = profile.model_dump_json(indent=2)
+        json_content = (
+            profile.model_dump_json(indent=2)
+            if hasattr(profile, "model_dump_json")
+            else str(profile)
+        )
         st.download_button(
             label="📦 Export Profile Telemetry (JSON)",
             data=json_content,
