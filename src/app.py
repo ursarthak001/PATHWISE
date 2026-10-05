@@ -235,6 +235,12 @@ with st.sidebar:
                 value=False,
                 help="Instantly simulate without waiting for Hugging Face API or network calls.",
             )
+            from src.gemma_engine import resolve_hf_token
+            has_token = bool(resolve_hf_token(hf_token_input.strip() or None))
+            if has_token:
+                st.caption("🟢 **HF Token:** Active & Detected")
+            else:
+                st.caption("🟠 **HF Token:** Not Detected (Offline Mock will be used)")
 
         submit_btn = st.form_submit_button(
             "🔮 Launch Future Me Simulator",
@@ -292,6 +298,13 @@ if submit_btn:
 # Bento Grid Dashboard Layout
 # ---------------------------------------------------------
 profile = st.session_state.career_profile
+
+if profile:
+    engine_name = getattr(profile, "engine_source", "Google Gemma 3 AI")
+    if "Offline" in engine_name or "Fallback" in engine_name:
+        st.warning(f"⚠️ **Simulation Source:** {engine_name}", icon="⚠️")
+    else:
+        st.success(f"⚡ **Simulation Source:** {engine_name} — Live inference verified", icon="🟢")
 
 # 1. Four-Column KPI Metric Row
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)

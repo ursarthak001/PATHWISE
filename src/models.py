@@ -271,6 +271,10 @@ class StudentCareerProfile(BaseModel):
         default="",
         description="Authoritative closing strategic recommendation",
     )
+    engine_source: str = Field(
+        default="Google Gemma 3 AI",
+        description="Engine that generated this simulation (Live Gemma AI or Mock Fallback)",
+    )
 
     @model_validator(mode="before")
     @classmethod

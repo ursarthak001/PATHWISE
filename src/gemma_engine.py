@@ -18,8 +18,8 @@ from src.models import StudentCareerProfile, FutureScenario, SkillGap, RoadmapPh
 load_dotenv()
 
 ROUTER_URL = "https://router.huggingface.co/v1/chat/completions"
-DEFAULT_MODEL = "google/gemma-2-9b-it"
-FALLBACK_MODELS = ["google/gemma-2-2b-it", "google/gemma-3-4b-it", "google/gemma-3-12b-it"]
+DEFAULT_MODEL = "google/gemma-3-4b-it"
+FALLBACK_MODELS = ["google/gemma-3-12b-it", "google/gemma-2-9b-it", "google/gemma-2-2b-it"]
 
 
 def resolve_hf_token(token: Optional[str] = None) -> Optional[str]:
@@ -449,6 +449,7 @@ def generate_mock_profile(degree: str, skills: str, interests: str) -> StudentCa
         recommended_projects=recommended_projects,
         learning_path=learning_path,
         final_verdict=verdict,
+        engine_source="Offline Simulation Fallback (Mock Data)",
     )
 
 
@@ -480,6 +481,7 @@ def analyze_student_profile(
     user_prompt = build_prompt(degree=degree, skills=skills, interests=interests)
 
     raw_response_text = ""
+    successful_model = None
     last_error: Optional[Exception] = None
 
     # Step 1: Direct HTTP request to https://router.huggingface.co/v1/chat/completions (90s timeout)
@@ -510,6 +512,7 @@ def analyze_student_profile(
             if resp.status_code == 200:
                 data = resp.json()
                 raw_response_text = data["choices"][0]["message"]["content"]
+                successful_model = model_name
                 break
             elif resp.status_code == 401:
                 last_error = PermissionError(
@@ -550,11 +553,13 @@ def analyze_student_profile(
                 temperature=0.2,
             )
             raw_response_text = chat_resp.choices[0].message.content
+            successful_model = DEFAULT_MODEL
         except Exception as client_err:
             # If network/token failure occurs, fall back to high-fidelity mock profile
             if last_error:
                 mock = generate_mock_profile(degree=degree, skills=skills, interests=interests)
                 mock.summary = f"[Offline Fallback Simulation] {mock.summary}"
+                mock.engine_source = f"Offline Fallback (Error: {last_error})"
                 return mock
             raise RuntimeError(
                 f"Failed to query Gemma via Hugging Face Inference API. "
@@ -564,9 +569,12 @@ def analyze_student_profile(
     # Step 3: Parse and validate strictly with Pydantic
     try:
         parsed_json = extract_json_from_response(raw_response_text)
-        return StudentCareerProfile.model_validate(parsed_json)
+        validated_profile = StudentCareerProfile.model_validate(parsed_json)
+        validated_profile.engine_source = f"Google Gemma 3 AI ({successful_model or DEFAULT_MODEL})"
+        return validated_profile
     except Exception as parse_err:
         # If model generated slight irregularities, fallback safely
         mock = generate_mock_profile(degree=degree, skills=skills, interests=interests)
         mock.summary = f"[Syntax Guard Fallback] {mock.summary}"
+        mock.engine_source = f"Syntax Guard Fallback (Parse error: {parse_err})"
         return mock
