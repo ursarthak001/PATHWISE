@@ -1,0 +1,13 @@
+{
+  "python.defaultInterpreterPath": "C:\\msys64\\ucrt64\\bin\\python.exe",
+  "python.analysis.extraPaths": [
+    "C:\\msys64\\ucrt64\\lib\\python3.14\\site-packages",
+    "${workspaceFolder}",
+    "${workspaceFolder}/venv/lib/python3.14/site-packages"
+  ],
+  "python.autoComplete.extraPaths": [
+    "C:\\msys64\\ucrt64\\lib\\python3.14\\site-packages",
+    "${workspaceFolder}",
+    "${workspaceFolder}/venv/lib/python3.14/site-packages"
+  ]
+}
